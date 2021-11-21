@@ -1,13 +1,11 @@
 import time
 from random import randint
-from typing import Match
 import pygame
-from pygame.constants import BUTTON_RIGHT
 
 
 class SnakeHead(pygame.sprite.Sprite):
 
-    def __init__(self):
+    def __init__(self, velocity, body_generate, space_queu_head):
         super().__init__()
         self.image = pygame.image.load('image/tête.png')
         self.image = pygame.transform.scale(self.image, (45, 40))
@@ -16,17 +14,22 @@ class SnakeHead(pygame.sprite.Sprite):
         self.rect.y = randint(0, 720)
         self.rect.x = randint(-15, 1080)
     
-        self.velocity = 10
-        # 0.0025
         self.speedTime = 0.0025
         self.direction = "right"
         # garde les coo d'une boucle avant
         # [self.rect.x],[self.rect.y]
         self.list_virtualCoo = [[], []]
-        self.spaceQueuHead = 4
+        
         self.placeActual = 0
         # nombre de place attendu
         self.placeWatting = 0
+
+        self.body_generate = body_generate
+        # 5
+        self.velocity = velocity
+        # 4
+        self.spaceQueuHead = space_queu_head
+        
 
 
     def move(self, angle):
@@ -86,25 +89,25 @@ class SnakeHead(pygame.sprite.Sprite):
 
     # tête selon ce qui est touché, ou pas
     # paramètre : objet écran/affichage, tab contient toutes les pos, objet mauvaise tomate, objet bonne tomate, si on gère la tomate, si on gère le corps
-    def collisionDetector(self, screen, list_content_all_position, notGoodTomato, tomato, allBody, snakeHead, bodyGenerate):
+    def collisionDetector(self, screen, list_content_all_position, notGoodTomato, tomato, allBody, snakeHead):
         # on traite ce qu'il y a faire au sujet de la tomate
         # si la tomate est touché
         if self.rect.colliderect(tomato.rect):
             print("SnakeHead.collisionDetector -> tomate touchée")
             tomato.ifIsTouchingOr(screen, list_content_all_position, notGoodTomato, True)
-            # on informe notre tête qu'il faut 100 têtes en plus
-            self.placeWatting += bodyGenerate
-            return True
+            # on informe notre tête qu'il faut x_nombres de têtes en plus
+            self.placeWatting += self.body_generate
+            return False
         # on actualise toujours la tomate
         elif self.rect.colliderect(notGoodTomato.rect):
             print("SnakeHead.collisionDetector -> tomate périmé touché")
-            return False
+            return True
         elif pygame.sprite.spritecollideany(snakeHead, allBody.group_Part):
             print("spritecollideany(snakeHead, allBody.group_Part) -> Propre corps touché ")
-            return False
+            return True
         else:
             tomato.ifIsTouchingOr(screen, list_content_all_position, notGoodTomato, False)
-            return True
+            return False
         
 
     # organisation du tableau = 0 est la position tête, x derniere position = position de la dernière partie de la queu
@@ -119,8 +122,10 @@ class SnakeHead(pygame.sprite.Sprite):
         else:
             self.list_virtualCoo[0].insert(0, int(self.rect.x))
             self.list_virtualCoo[1].insert(0, int(self.rect.y))
-            self.placeActual += 1
+
             AllPartsBodySnake.IsGenerateOneBody(self.placeActual , self.spaceQueuHead, self.placeWatting,  self.list_virtualCoo)
+            self.placeActual += 1
+
 
 class PartBodySnake(pygame.sprite.Sprite):
 
@@ -139,23 +144,24 @@ class PartBodySnake(pygame.sprite.Sprite):
         self.direction = None
 
 class AllPartsBodySnake(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, bodies_no_detected):
         super().__init__()
         # contient toutes les parties, pour former les corps du serpent
         self.list_storageALLBodies = []
         self.nombreParcelles = 0
         self.group_Part = pygame.sprite.Group()
+        self.bodies_no_detected = bodies_no_detected
 
-    def IsGenerateOneBody(self,placeActual, spaceQueuHead, placeWatting, list_virtualCoo):
+    def IsGenerateOneBody(self, placeActual, spaceQueuHead, placeWatting, list_virtualCoo):
 
         x = len(list_virtualCoo[0]) - 1
         y = len(list_virtualCoo[1]) - 1
         len_AllBodies = len(self.list_storageALLBodies) - 1
 
         if placeWatting > 0:
-            if placeActual - spaceQueuHead  <= placeWatting:
+            if placeActual - spaceQueuHead  < placeWatting:
                 self.list_storageALLBodies.append(PartBodySnake(list_virtualCoo[0][x], list_virtualCoo[1][y]))
-                if placeActual > 10:
+                if placeActual - spaceQueuHead > 7:
                     self.group_Part.add(self.list_storageALLBodies[len_AllBodies])
 
     def followMod(self, screen, snakeHead, spaceQueuHead):

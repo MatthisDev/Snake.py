@@ -1,77 +1,94 @@
-from objet import *
-from map import *
+"""
+faire interface - début de partie - paramètre (
+    mode : 
+    - son
+    - niveau type = faible medium hard impossible
+    - taille fenêtre
+    bouttons : 
+    lancer partie 
+    quitter jeu
+)
+"""
+from game import *
 import pygame
+from interfaces import *
 
-# initialisation fenetre + pygame
-pygame.init()
-clock = pygame.time.Clock()
-pygame.display.set_caption("snake")
-screen = pygame.display.set_mode((1080, 720))
+def game_function():
+    # initialisation fenetre + pygame
+    pygame.init()
+    clock = pygame.time.Clock()
+    pygame.display.set_caption("snake")
+    screen = pygame.display.set_mode((1080, 720))
 
-# variable
-running = True
-keyValidation = "right"
-list_content_all_position = []
+    # variable
+    running = True
+    # contient une partie qui est entrain d'être jouer
+    game = None
+    starting_windows = StartingWindows(screen)
+    exit_button = Button_exit()
 
+    go = 0
+    # running arrête le jeu si = "True"
+    while running:  
+        # FPS Gestion
+        clock.tick(30)
+        # print(clock.get_fps())
 
-# Fonction qui permet de choisir l'espace entre la queu et la tête et la tête et la queue
-# permet d'alleger le traitement des informations par micro second et empecher que le serpent ralentisse
-def initialisationOfQueu():
+        starting_windows.starting_update(screen)
 
-    # espaceQueuTete = int(input("Initialisation -> Choisir votre espace entre la tête et la queu : "))
-    nombre_corp_generate = int(input("Initialisation -> Choisir le nombre de corps généré : "))
+        # si fenêtre début n'est pas activé alors jeu marche
+        if not starting_windows.isActivate:
+            starting_windows.isActivate = game.game_update(screen)
+            exit_button.exit_update(screen)
 
-    return nombre_corp_generate
+        # met-à-jour le jeu
+        pygame.display.flip()
 
-# on definit des variables pour pouvoir faire nos réglages
-numberBodyGenerate = initialisationOfQueu()
+        for event in pygame.event.get():
 
-# initialisation des objets
-tomato = Tomato()
-notGoodTomato = NotGoodTomato()
-
-snakeHead = SnakeHead()
-
-mainMap = Map()
-
-allBody = AllPartsBodySnake()
-
-
-# boucle qui fait tourner le jeu en continue
-while running:
-    # FPS Gestion
-    clock.tick(30)
-    #print(clock.get_fps())
-
-    # on charge les images/assets/objet
-    screen.blit(mainMap.background, (0, 0))
-    screen.blit(snakeHead.image, snakeHead.rect)
-    screen.blit(tomato.image, tomato.rect)
-
-    # On actualise les coordonnées du joueur, et on effectue le border paramètre
-    snakeHead.rect.x, snakeHead.rect.y = mainMap.border(snakeHead.rect.x, snakeHead.rect.y)
-    # on fait bouger le serpent sans le changer d'angle
-    snakeHead.move(0)
-    # en fonction de ce qu'on touche ou non on fait une action
-    running = snakeHead.collisionDetector(screen, list_content_all_position, notGoodTomato, tomato, allBody, snakeHead, numberBodyGenerate)
-
-    snakeHead.gestionCooTab(allBody)
-
-    # s'il y a un corps minimum dans la liste alors on le fait apparaitre à l'écran et on le fait suivre la tête
-    if len(allBody.list_storageALLBodies) > 0:
-        allBody.followMod(screen, snakeHead, snakeHead.spaceQueuHead)    
-
-    # met-à-jour le jeu
-    pygame.display.flip()
-
-    for event in pygame.event.get():
-
-        if event.type == pygame.QUIT:
-            running = False
-            pygame.quit()
-            print("fermeture du jeu")
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                print("fermeture du jeu")
 
         # nous permet de faire bouger notre serpent 
-        elif event.type == pygame.KEYDOWN:
-            # systeme de controle
-            snakeHead.snakeControl(event, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP)
+            elif event.type == pygame.KEYDOWN:
+            # touches pour controler le serpent
+                game.snakeHead.snakeControl(event, pygame.K_RIGHT, pygame.K_DOWN, pygame.K_LEFT, pygame.K_UP)
+
+            elif event.type == pygame.MOUSEBUTTONDOWN and starting_windows.isActivate:
+            # si clique sur button play alors on lance le jeu
+                if starting_windows.button_play_rect.collidepoint(event.pos):
+                # on cree une nouvelle partie
+                    game = Game(starting_windows)
+                    starting_windows.isActivate = False
+                    
+                if starting_windows.button_levels_rect.collidepoint(pygame.mouse.get_pos()):
+
+                    level_text = switch(starting_windows.actual_level)
+                    if level_text == "error":
+                        print("level_text chagement -> ERROR")
+                        running = False
+                    else :
+                        starting_windows.actual_level = level_text
+                        del starting_windows.button_levels_text
+                        starting_windows.button_levels_text_pos()
+                        # starting_windows.button_levels_text = pygame.image.load(level_text)
+                        # starting_windows.button_levels_text = pygame.transform.scale(starting_windows.button_levels_text , (40, 40))
+            elif event.type == pygame.MOUSEBUTTONDOWN and not starting_windows.isActivate:
+                if exit_button.exit_rect.collidepoint(event.pos):
+                    starting_windows.isActivate = True
+                    
+                    
+
+# on cree la fonction switch
+def switch(value):
+    return {
+        'image/text_easy.png' : 'image/text_medium.png',
+        'image/text_medium.png' : 'image/text_hard.png',
+        'image/text_hard.png' : 'image/text_expert.png',
+        'image/text_expert.png' : 'image/text_easy.png' 
+    }.get(value, "error")
+
+game_function()
+
