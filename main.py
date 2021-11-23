@@ -17,7 +17,7 @@ def game_function():
     while running:  
         # FPS
         clock.tick(55)
-        print(clock.get_fps())
+        # print(clock.get_fps())
 
         home_screen.starting_update(screen)
 
@@ -60,7 +60,7 @@ def game_function():
 
             # IN THE GAME WINDOW : if you click on the red button it stop the current game
             elif event.type == pygame.MOUSEBUTTONDOWN and not home_screen.isActivate:
-                
+
                 if game.exit_rect.collidepoint(event.pos):
                     home_screen.isActivate = True
                     

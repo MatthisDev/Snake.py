@@ -184,10 +184,10 @@ class Tomato(pygame.sprite.Sprite):
 
     def get_collision(self, not_good_tomato, is_touching):
         if is_touching:
-            not_good_tomato.randomSpawn(is_touching)
+            not_good_tomato.create_random_spawn(is_touching)
             self.create()
         if not is_touching:
-            not_good_tomato.randomSpawn(is_touching)
+            not_good_tomato.create_random_spawn(is_touching)
 
     @classmethod
     def change_spawn(cls):
